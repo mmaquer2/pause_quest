@@ -1,30 +1,32 @@
-
 import time
 import threading 
 import os
 import queue
 from character import character
+from combat import combat
 
 class Game:
     def __init__(self):
         self.is_running = False
         self.is_paused = False
+        self.in_combat = False
         self.turn = 0
         self.time_elapsed = 0
         self.command_queue = queue.Queue()
         self.input_thread = None
+        self.combatInstance = None
         
-        warrior_equipment = {"weapon": ["sword"], "armor": ["shield", "helmet"]}
+        warrior_equipment = {"weapon": ["spear"], "armor": ["shield", "helmet"]}
         goblin_equipment = {"weapon": ["dagger"], "armor": ["leather"]}
         
         self.team_a = [
-            character("Tim", "Warrior", strength=7 , inventory=warrior_equipment.copy()),
-            character("Bob", "Warrior", strength=8, inventory=warrior_equipment.copy())
+            character("Tim", "Warrior", strength=7 , inventory=warrior_equipment.copy(), unit_id=1),
+            character("Bob", "Warrior", strength=8, inventory=warrior_equipment.copy(), unit_id=2),
         ]
         
         self.team_b = [
-            character("Goblin A", "Goblin", strength=3, inventory=goblin_equipment.copy()),
-            character("Goblin B", "Goblin", strength=3, inventory=goblin_equipment.copy())
+            character("Goblin A", "Goblin", strength=3, inventory=goblin_equipment.copy(), unit_id=3),
+            character("Goblin B", "Goblin", strength=3, inventory=goblin_equipment.copy(), unit_id=4)
         ]
 
         self.action_queues = {
@@ -33,6 +35,34 @@ class Game:
         }
             
     def start_game(self):
+        
+        # display party information to the user 
+        
+        os.system('cls' if os.name == 'nt' else 'clear')
+        
+        print("==========================")
+        
+        print("Your party consists of the following characters:")
+    
+        for character in self.team_a:
+            print(character.get_status())
+        print("\n")
+        
+        
+        print("you are in a cave and you are being attacked by goblins!")
+        print("what will you do?")
+        
+        ## start combat encounter
+        #self.combatInstance = combat()
+        ##self.in_combat = True
+        #self.combatInstance.start_combat(self.team_a, self.team_b) 
+        
+      
+        
+        ## TODO: implement a map and movement system
+        ## display map to the user on game start
+        #print("your objective is to get out of the cave and defeat enemies along the way.")
+        
         self.display_commands()
         self.is_running = True
         self.input_thread = threading.Thread(target=self.input_handler)
@@ -60,6 +90,8 @@ class Game:
         """Thread function handles user input"""
         while self.is_running:
             try:
+                # TODO: bug here where the ">" is overwritten by previous text to the console
+                print() 
                 user_action = input("> ")
                 # Put the command in the queue for processing by the main thread
                 print(f"Command received: '{user_action}'")
@@ -85,32 +117,48 @@ class Game:
             pass
     
     
-    def handle_command(self, user_action):
+    def handle_command(self, user_action, details=None):
         if user_action == "q":
-            print("Quitting the game!")
-            self.stop_game()
-  
-        if user_action == "q":
+            print("Quitting the game!\n")
             self.stop_game()
             return
-            
-        if user_action == "0":
-           pass
+        
+        
+        ## parse user_action details 
+        
+                   
+        #if user_action == "0":
+        #   pass
         
         if user_action == "1":
-            print("attack")
+            
+            if self.in_combat:
+                print("attack")
+                #combatInstance.resolve_attack(attacker, target)
+                #combatInstance.defend(defender, attacker)
+                #combatInstance.heal(healer, target)
+                #combatInstance.area_of_effect(caster, targets)
+                
+            else:
+                print("attack")
+                
+                ## start new combat encounter
+                #self.combatInstance = combat()
+                #self.in_combat = True
+                #self.combatInstance.start_combat(self.team_a, self.team_b)
+                
             
         elif user_action == "2":   
-            pass
+            print("ability\n")
                  
         elif user_action == "3":
-            pass
-        
-        elif user_action == "4":
-            pass
-        
-        elif user_action == "5":
             self.print_status()
+        
+        #elif user_action == "4":
+        #    print("move\n")
+        
+        #elif user_action == "5":
+        #    pass
              
         elif user_action == "p":
             print("Pausing game...")
@@ -138,19 +186,19 @@ class Game:
     
     def display_commands(self):
         print("\n------------ ACTION COMMANDS -------------")
-        print("0. interact - Interact with a something")
-        print("1. attack <team> <character> <target_team> <target_character> - Basic attack")
-        print("2. special <team> <character> <target_team> <target_character> - Special attack with chance to stun")
-        print("3. heal <team> <character> <team> <target_character> - Heal a character")
-        print("4. move <team> <character> <target_team> - Move to a different location")
-        print("5. status - Display the status of all characters")
-        print ("6. show team inventory - Display the inventory of a character")
-        print("7. map")
+        #print("0. interact")
+        print("1. basic attack <character> <target> <target_character>")
+        print("2. ability <character> <ability> <target_character> ")
+        print("3. show status")
+        #print("3. item <character> <item> <target_character>")
+        #print("4. move <character> <location>")
+        #print ("6. show inventory")
+        #print("7. map")
         
         print("----- ADMIN COMMANDS ----------------------")
         print("p. pause")
         print("r. resume")
-        print("h. help")
+        #print("h. help")
         print("q. quit")
         print("-------------------------------------------\n")
         
@@ -159,7 +207,17 @@ class Game:
     
     
     def is_gameOver():
-        # check if any team has lost all characters
+        
+       
+        # if has_reachedEnd():
+        #     print("You have reached the end of the cave!")
+        #     return True
+        
+        # if has_lost():
+        #     print("You have lost all your characters!")
+        #     return True
+        
+        
         pass
       
   
@@ -185,7 +243,7 @@ class Game:
                     self.time_elapsed += micro_turn_duration
                     self.turn += 1
                     
-                    print(f"Turn: {self.turn} | Time elapsed: {self.time_elapsed:.1f}s")
+                    #print(f"Turn: {self.turn} | Time elapsed: {self.time_elapsed:.1f}s")
                     
                     # allow some time for the game to process and the human to read
                     time.sleep(micro_turn_duration)
